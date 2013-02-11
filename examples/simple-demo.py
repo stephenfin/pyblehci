@@ -1,12 +1,8 @@
 import sys
 import collections
 
-#sys.path.append('C:\Users\Stephen\Documents\Projects\Python\pyblehci_rewrite')
-#from pyblehci import BLEBuilder
-#from pyblehci import BLEParser
-#
-from ..pyblehci import BLEBuilder
-from ..pyblehci import BLEParser
+from pyblehci import BLEBuilder
+from pyblehci import BLEParser
 
 def pretty(hex_string, seperator=None):
 	# >>> pretty("\x01\x02\x03\xff")
