@@ -1,13 +1,9 @@
-"""
-@fn 	ti_ble_parser.py
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-@author	Stephen Finucane, 2013
-@email	stephenfinucane@hotmail.com
+# Copyright 2013, Stephen Finucane
 
-@about	Based heavily on python-xbee library by Paul Malmsten.
-		This class defines data and methods applicable to the Texas Instruments
-		Bluetooth Low Energy Host-Controller-Interface (HCI)
-"""
+# Author: Stephen Finucane <stephenfinucane@hotmail.com>
 
 import collections
 import serial
@@ -19,6 +15,15 @@ class ThreadQuitException(Exception):
 	pass
 
 class BLEParser(threading.Thread):
+	"""
+	A parser for event packets as defined by the the Texas Instruments Bluetooth
+	Low Energy Host-Controller-Interface (HCI).
+	
+	Capable of monitoring a serial device, parsing the packets and returning to
+	a calling method by callback
+
+	Based heavily on python-xbee library by Paul Malmsten.
+	"""
 	#dictionaries	
 	#opcodes for command packets
 	opcodes = 	{"fd8a":'GATT_ReadCharValue',
@@ -76,7 +81,7 @@ class BLEParser(threading.Thread):
 					 	 {'name':'pdu_len',		'len':1},
 					 	 {'name':'results',		'len':None}]},
 				"0513":
-					{'name':'ATT_ReadMultiRsp',
+					{'name':'ATT_WriteRsp',
 					 'structure':
 					 	[{'name':'conn_handle',	'len':2},
 					 	 {'name':'pdu_len',		'len':1}]},
@@ -140,9 +145,13 @@ class BLEParser(threading.Thread):
 
 	def __init__(self, ser=None, callback=None):
 		"""
-		Constructor Arguments:
-			ser:		The file like serial port to use (see PySerial)
-			callback:	The callback function to return data to
+		Initialises the class
+
+		@param ser: The file like serial port to use
+		@type ser: serial.Serial
+
+		@param callback: The callback method
+		@type callback: <function>
 		"""
 		super(BLEParser, self).__init__()
 		self.serial_port = ser
@@ -157,7 +166,7 @@ class BLEParser(threading.Thread):
 
 	def run(self):
 		"""
-		run overrides threading.Thread.run() and is automatically
+		Overrides threading.Thread.run() and is automatically
 		called when an instance is created with threading enabled
 		"""
 		while True:
@@ -168,7 +177,7 @@ class BLEParser(threading.Thread):
 
 	def stop(self):
 		"""
-		stop stops the thread and closes the serial port
+		Stops the thread and closes the serial port
 		"""
 		self._thread_continue = False
 		self.serial_port.close()
@@ -176,24 +185,19 @@ class BLEParser(threading.Thread):
 
 	def stopped(self):
 		"""
-		getter method for isSet variable
+		Getter method for isSet variable
+
+		>>> stopped()
+		false
 		"""
 		return self._stop.isSet()
 
 	def _wait_for_frame(self):
 		"""
-		_wait_for_frame will read from the serial port until a valid HCI packet
-		arrives. It will then return the binary data contained within the 
-		packet.
+		Reads from the serial port until a valid HCI packet arrives. It will then 
+		return the binary data contained within the packet.
 
-		Input:
-			None. Reads from serial port until data is received. Once received
-			the first three bytes are retieved and saved. The last of these 
-			bytes indicates the number of remaining bytes
-
-		Returns:
-			A byte string of the correct length (as specified by the third 
-			byte of the packet)
+		@return: A byte string of the correct length
 		"""
 		#loop forever...
 		while True:
@@ -220,31 +224,25 @@ class BLEParser(threading.Thread):
 
 	def _split_response(self, data):
 		"""
-		_split_response takes a data packet received from a TI BLE device and
-		converts it into a dictionary. This dictionary provides names for many
-		of the segment of binary data as specified in the TI BLE Vendor 
-		Specific HCI Guide.
+		Takes a data packet received from a TI BLE device and parses it.
 
-		Input:
-			Data is received as a byte string. This means frequent calls are 
-			made to the built-in encode(x) method to get the ascii 
-			representation of the string
+		>>> _split_response("\\x04\\xFF\\x08\\x7F\\x06\\x00\\x31\\xFE\\x02\\xD0\\x07")
+		('\\x04\\xff\\x08\\x7f\\x06\\x00\\x31\\xfe\\x02\\xd0\\x07', OrderedDict(
+		[('type', ('\\x04', 'Event')), 
+		('event_code', ('\\xff', 'HCI_LE_ExtEvent')), 
+		('data_len', ('\\x02', '02')), 
+		('event', ('\\x06\\x7f', 'GAP_HCI_ExtensionCommandStatus')), 
+		('status', ('\\x00', '00')), 
+		('op_code', ('\\31\\xfe', 'GAP_GetParam')), 
+		('param_value', ('\\xd0\\x07', '07d0'))]))
 
-		Returns:
-			An ordered dictionary (data order is important) containing binary
-			tuples, in which the first piece of data corresponds to the raw 
-			byte string value and the second piece corresponds to its parsed 
+		@param data: The byte string to split and parse
+		@type data: hex
+
+		@return: An ordered dictionary (data order is important) containing binary
+			tuples, in which the first piece of data corresponds to the raw byte 
+			string value and the second piece corresponds to its parsed 
 			"meaning"
-
-		Example Packet:
-			04 FF 06 7F 06 00 00 FE 00  --> "GAP_DeviceInit command received"
-
-			04		-->		packet_type -->		0x04 	(Event packet)
-			FF 		-->		event_code	-->		0xFF 	(HCI_LE_ExtEvent)
-			06 		-->		data_len 	-->		0x06 	(6 Bytes)
-			7F 06 	-->		event_type 	-->		0x067F	(GAP_HCI_ExtentionCommandStatus)
-			00 		-->		status 		-->		0x00 	(Success)
-			00 FE 	--> 	op_code 	-->		0xFE00 	(GAP_DeviceInit)
 		"""
 		packet_type = data[0]
 		event_code 	= data[1]
@@ -345,48 +343,45 @@ class BLEParser(threading.Thread):
 
 	def _parse_opcodes(self, parsed_packet):
 		"""
-		_parse_opcodes is a special parsing routine for the "GAP HCI Extention
-		Command Status" HCI LE ExtEvent.
+		Functions as a special parsing routine for the "GAP HCI Extention Command 
+		Status" HCI LE ExtEvent.
 
-		Input:
-			Data is received as a tuple, containing the original byte string
-			and the encoded ascii version of that string. We only use the 
-			latter
+		>>> _parse_opcodes(("\\x04\\xFE", "fe04"))
+		("\\x04\\xFE", "GAP_DeviceDiscoveryRequest")
 
-		Returns:
-			An ordered dictionary (data order is important) containing binary
+		@param parsed_packet: A tuple of a byte string and the ascii encoded copy
+		@type parsed_packet: (hex, string)
+
+		@return:	An ordered dictionary (data order is important) containing binary
 			tuples, in which the first piece of data corresponds to the raw 
 			byte string value and the second piece corresponds to its parsed 
 			"meaning" - the command name sourced by lookup of the command dict
 
-		Example device string:
-			04 FE 				 		--> "GAP_DeviceDiscoveryRequest"
+		
 		"""
 		value = self.opcodes[parsed_packet[1]]
 		return (parsed_packet[0], value)
 
 	def _parse_devices(self, orig_devices):
 		"""
-		_parse_devices is a special parsing routine for the "GAP Device 
-		Discovery Done" HCI LE ExtEvent.
+		Functions as a special parsing routine for the "GAP Device Discovery 
+		Done" HCI LE ExtEvent.
 
-		Input:
-			Data is received as a tuple, containing the original byte string
-			and the encoded ascii version of that string. We only use the 
-			former
+		>>> _parse_devices(("\\x00\\x00\\x57\\x6A\\xE4\\x31\\x18\\x00", "0000576AE4311800"))
+		[OrderedDict([
+		('event_type', ('\\x00', '00')), 
+		('addr_type', ('\\x00', '00')), 
+		('addr', ('\\x57\\x6a\\xe4\\x31\\x18\\x00', '001831e46a57'))
+		])]
 
-		Returns:
-			An ordered dictionary (data order is important) containing binary
+		@param orig_devices: A tuple of a byte string and the ascii encoded copy
+		@type orig_devices: (hex, string)
+
+		@return: An ordered dictionary (data order is important) containing binary
 			tuples, in which the first piece of data corresponds to the raw 
 			byte string value and the second piece corresponds to its parsed 
 			"meaning" - currently just the hex encoded version of the string
 
-		Example device string:
-			00 00 57 6A E4 31 18 00 	--> A single device
-
-			00					-->		event_type
-			00 					-->		addr_type
-			57 6A E4 31 18 00 	-->		addr
 		"""
 		parsed_devices = []
 		#seperate the byte string containing the devices into groups of eight 
@@ -415,22 +410,19 @@ class BLEParser(threading.Thread):
 
 	def _parse_read_results(self, results):
 		"""
-		_parse_read_results is a special parsing routine for the "ATT Read By 
-		Type Rsp" HCI LE ExtEvent.
+		Functions as a special parsing routine for the "ATT Read By Type Rsp" HCI 
+		LE ExtEvent.
 
-		Input:
-			Data is received as a tuple, containing the original byte string
-			and the encoded ascii version of that string. We only use the 
-			former
+		>>> _parse_read_results(("\\x00\\x00\\x57\\x6A\\xE4\\x31\\x18\\x00", "0000576AE4311800"))
+		TODO
 
-		Returns:
-			An ordered dictionary (data order is important) containing binary
+		@param results: A tuple of a byte string and the ascii encoded copy
+		@type results: (hex, string)
+
+		@return: An ordered dictionary (data order is important) containing binary
 			tuples, in which the first piece of data corresponds to the raw 
 			byte string value and the second piece corresponds to its parsed 
 			"meaning" - currently just the hex encoded version of the string
-
-		TODO: 	Is this correct? Looks too similar to devices - perhaps carbon 
-				copied?
 		"""
 		parsed_results = []
 		#seperate the byte string containing the results into groups of eight 
@@ -457,15 +449,10 @@ class BLEParser(threading.Thread):
 	
 	def wait_read(self):
 		"""
-		wait_read combines both _wait_for_frame (to read a valid packet) and
-		_split_response (to parse that packet).
+		Combines both _wait_for_frame (to read a valid packet) and _split_response 
+		(to parse that packet).
 
-		Input:
-			None. Retrieves its data by calling _wait_for_frame, which reads 
-			from the serial port and returns any packet received
-
-		Returns:
-			A parsed version of the packet received on the serial port
+		@return: A parsed version of the packet received on the serial port
 		"""
 		packet = self._wait_for_frame()
 		return self._split_response(packet)

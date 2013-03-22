@@ -35,7 +35,7 @@ This is possible by use of `pySerial <http://pyserial.sourceforge.net/>`_
 
 .. code-block:: pycon
     
-    >>> serial_port = serial.Serial((port='/dev/ttyACM0', baudrate=57600))
+    >>> serial_port = serial.Serial(port='/dev/ttyACM0', baudrate=57600)
     >>> def analyse_packet(packet):
     ...     print packet
     ...
@@ -86,7 +86,7 @@ To install:
 Contribute
 ----------
 
-#. While most of the packets structures have been implemented in both the 
-BLEParser and BLEBuilder modules, they are not complete. Additional packets
-can be found in the 'TI Vendor Specific HCI Guide' pdf document that is 
-included in the TI BLE stack download
+- While most of the packets structures have been implemented in both the 
+  BLEParser and BLEBuilder modules, they are not complete. Additional packets
+  can be found in the 'TI Vendor Specific HCI Guide' pdf document that is 
+  included in the TI BLE stack download

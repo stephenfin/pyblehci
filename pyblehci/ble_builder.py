@@ -1,18 +1,20 @@
-"""
-@fn 	ti_ble_builder.py
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
-@author	Stephen Finucane, 2013
-@email	stephenfinucane@hotmail.com
+# Copyright 2013, Stephen Finucane
 
-@about	Based heavily on python-xbee library by Paul Malmsten.
-		This class defines data and methods applicable to the Texas Instruments
-		Bluetooth Low Energy Host-Controller-Interface (HCI)
-"""
+# Author: Stephen Finucane <stephenfinucane@hotmail.com>
 
 import collections
 import serial
 
 class BLEBuilder():
+	"""
+	A builder for command packets as defined by the the Texas Instruments 
+	Bluetooth Low Energy Host-Controller-Interface (HCI).
+	
+	Based on python-xbee library by Paul Malmsten.
+	"""
 	#dictionaries	
 	#opcodes for command packets
 	opcodes = 	{"fd8a":'GATT_ReadCharValue',
@@ -85,29 +87,46 @@ class BLEBuilder():
 
 	def __init__(self, ser=None):
 		"""
-		Constructor Arguments:
-			ser:		The file like serial port to use (see PySerial)
-			callback:	The callback function to return data to
+		Initialises the class
+
+		@param ser: The file like serial port to use
+		@type ser: serial.Serial
 		"""
 		self.serial_port = ser
 
 	def _build_command(self, cmd, **kwargs):
 		"""
-		_build_command will construct a command packet according to the
-		specified command's specification in the TI BLE Vendor Specific HCI 
-		Guide. It will expect named arguments for all fields other than those 
+		Constructs a HCI command to the serial port for this BLE device 
+
+		>>> _build_command("fe31", param_id="\x15")
+		('\\x01\\x31\\xfe\\x01\\x15', OrderedDict([
+		('type', ('\\x01', 'Command')), 
+		('op_code', ('\\x31\\xfe', 'GAP_GetParam')), 
+		('data_len', ('\\x01', '01')), 
+		('param_id', ('\\x15', '15'))])
+		)
+
+		It will expect named arguments for all fields other than those 
 		with a default value or length of 'None'.
+
+		>>> _build_command("fe31")
+		Traceback (most recent call last):
+		File "<stdin>", line 1, in <module>
+		File "C:\Python27\lib\site-packages\pyblehci\\ble_builder.py", line 168, \
+in _build_command % (field_name, field_len))
+		KeyError: "The data provided for 'param_id' was not 1 bytes long"
 	
 		Each field will be written out in the order they are defined in the 
 		command definition.
 
-		Input:
+		@param cmd: The command to be written
+		@type cmd: hex
 
+		@param kwargs: Any additional parameters
+		@type kwargs: hex
 
-		Returns:
-			
-		Example Packet:
-		
+		@return: A tuple containing the hex command string and a parsed version 
+		of the string stored in a dictionary.
 		"""
 		packet_type = "\x01"
 		op_code 	= cmd.decode('hex')[::-1]	#command code was human-readable
@@ -186,21 +205,35 @@ class BLEBuilder():
 
 	def send(self, cmd, **kwargs):
 		"""
-		send: string param=binary data ... -> None
-		
-		When send is called with the proper arguments, an HCI command
-		will be written to the serial port for this BLE device
-		containing the proper instructions and data
-		
+		Constructs and write a HCI command to the serial port for this BLE device
+
+		>>> send(cmd="fe31", param_id="\x15")
+		01:31:FE:01:15	#<-- also writes this to serial port
+
 		This method must be called with the named arguments in accordance 
 		with the HCI specification. Arguments matching all field names 
 		other than those in the reserved_names (like 'id' and 'order')
 		should be given, unless they are of variable length (of 'None' in
 		the specification. These are optional).
 
-		Example Usage:
-			>>> print self.send(cmd="fe31", param_id="\x15")
-			01:31:FE:01:15	#<-- also writes this to serial port
+		>>> send(cmd="fe31")
+		Traceback (most recent call last):
+		File "<stdin>", line 1, in <module>
+		File "C:\Python27\lib\site-packages\pyblehci\\ble_builder.py", line 168, \
+in _build_command % (field_name, field_len))
+		KeyError: "The data provided for 'param_id' was not 1 bytes long"
+	
+		Each field will be written out in the order they are defined in the 
+		command definition.
+
+		@param cmd: The command to be written
+		@type cmd: hex
+
+		@param kwargs: Any additional parameters
+		@type kwargs: hex
+
+		@return: A tuple containing the hex command string and a parsed version 
+		of the string stored in a dictionary.
 		"""
 		packet, built_packet = self._build_command(cmd, **kwargs)
 		self.serial_port.write(packet)

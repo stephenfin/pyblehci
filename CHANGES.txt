@@ -1,3 +1,4 @@
 v0.1.0, 05/02/2013 -- Initial release
 v0.2.0, 11/02/2013 -- Stable release version
 v0.2.1, 22/03/2013 -- Improved documentation
+v0.2.2, 22/03/2013 -- Fixed issues caused by previous version documentation
