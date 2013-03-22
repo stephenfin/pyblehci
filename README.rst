@@ -63,10 +63,10 @@ Features
 Supported Devices
 -----------------
 
-- TI CC2540DK-MINI Development Kit USB Dongle
 The library should support any TI single-mode BLE device that uses the 
-HostTestRelease firmware. Tested devices:
+HostTestRelease firmware. The below devices are those that have been tested
 
+- TI CC2540DK-MINI Development Kit USB Dongle
 
 Installation
 ------------
