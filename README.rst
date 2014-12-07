@@ -74,7 +74,7 @@ To download pyblehci:
 
 .. code-block:: bash
 
-    $ git clone https://stephenfinucane@code.google.com/p/pyblehci/
+    $ git clone https://github.com/stephenfin/pyblehci.git
 
 To install:
 
